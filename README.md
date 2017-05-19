@@ -229,6 +229,13 @@ player.disableControls();
 // Undoes disableControls()
 player.enableControls();
 
+// Prevents the user from seeking further than the video has played. The user can still seek freely 
+// in the portion of the video that has already been played.
+player.disableSeekAhead();
+
+//Undoes disableSeekAhead()
+player.enableSeekAhead();
+
 // Returns true if the player has prepared for playback entirely
 player.isPrepared();
 

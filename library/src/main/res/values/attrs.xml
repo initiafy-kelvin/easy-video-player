@@ -30,6 +30,7 @@
         <attr name="evp_autoPlay" format="boolean" />
 
         <attr name="evp_disableControls" format="boolean" />
+        <attr name="evp_disableSeekAhead" format="boolean" />
 
         <attr name="evp_themeColor" format="color" />
 

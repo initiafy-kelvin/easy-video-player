@@ -135,6 +135,8 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
     private boolean mAutoPlay;
     private int mInitialPosition = -1;
     private boolean mControlsDisabled;
+    private boolean mSeekAheadDisabled;
+    private int mHighestPosition = 0;
     private int mThemeColor = 0;
     private boolean mAutoFullscreen = false;
     private boolean mLoop = false;
@@ -152,6 +154,7 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
             mLabelDuration.setText(Util.getDurationString(dur - pos, true));
             mSeeker.setProgress(pos);
             mSeeker.setMax(dur);
+            setHighestPosition(pos);
 
             if (mProgressCallback != null)
                 mProgressCallback.onVideoProgressUpdate(pos, dur);
@@ -167,9 +170,9 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
 
         if (attrs != null) {
             TypedArray a = context.getTheme().obtainStyledAttributes(
-                    attrs,
-                    R.styleable.EasyVideoPlayer,
-                    0, 0);
+                attrs,
+                R.styleable.EasyVideoPlayer,
+                0, 0);
             try {
                 String source = a.getString(R.styleable.EasyVideoPlayer_evp_source);
                 if (source != null && !source.trim().isEmpty())
@@ -203,9 +206,10 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
                 mHideControlsOnPlay = a.getBoolean(R.styleable.EasyVideoPlayer_evp_hideControlsOnPlay, true);
                 mAutoPlay = a.getBoolean(R.styleable.EasyVideoPlayer_evp_autoPlay, false);
                 mControlsDisabled = a.getBoolean(R.styleable.EasyVideoPlayer_evp_disableControls, false);
+                mSeekAheadDisabled = a.getBoolean(R.styleable.EasyVideoPlayer_evp_disableSeekAhead, false);
 
                 mThemeColor = a.getColor(R.styleable.EasyVideoPlayer_evp_themeColor,
-                        Util.resolveColor(context, R.attr.colorPrimary));
+                    Util.resolveColor(context, R.attr.colorPrimary));
 
                 mAutoFullscreen = a.getBoolean(R.styleable.EasyVideoPlayer_evp_autoFullscreen, false);
                 mLoop = a.getBoolean(R.styleable.EasyVideoPlayer_evp_loop, false);
@@ -399,7 +403,7 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
 
     private void setSourceInternal() throws IOException {
         if (mSource.getScheme() != null &&
-                (mSource.getScheme().equals("http") || mSource.getScheme().equals("https"))) {
+            (mSource.getScheme().equals("http") || mSource.getScheme().equals("https"))) {
             LOG("Loading web URI: " + mSource.toString());
             mPlayer.setDataSource(mSource.toString());
         } else if (mSource.getScheme() != null && (mSource.getScheme().equals("file") && mSource.getPath().contains("/android_assets/"))) {
@@ -527,6 +531,18 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
         mClickFrame.setClickable(false);
     }
 
+    public void enableSeekAhead() {
+        mSeekAheadDisabled = false;
+    }
+
+    public void disableSeekAhead() {
+        mSeekAheadDisabled = true;
+    }
+
+    private void setHighestPosition(int proposedPosition) {
+        if (mHighestPosition < proposedPosition) mHighestPosition = proposedPosition;
+    }
+
     @CheckResult
     @Override
     public boolean isPrepared() {
@@ -567,6 +583,7 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
     public void seekTo(@IntRange(from = 0, to = Integer.MAX_VALUE) int pos) {
         if (mPlayer == null) return;
         mPlayer.seekTo(pos);
+        setHighestPosition(pos);
     }
 
     public void setVolume(@FloatRange(from = 0f, to = 1f) float leftVolume, @FloatRange(from = 0f, to = 1f) float rightVolume) {
@@ -899,7 +916,14 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
-        if (fromUser) seekTo(value);
+        if (fromUser) {
+            if (mSeekAheadDisabled && value > mHighestPosition) {
+                seekBar.setProgress(mHighestPosition);
+                return;
+            }
+
+            seekTo(value);
+        }
     }
 
     @Override
