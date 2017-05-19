@@ -136,6 +136,7 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
     private int mInitialPosition = -1;
     private boolean mControlsDisabled;
     private boolean mSeekAheadDisabled;
+    private boolean mSeekDisabled;
     private int mHighestPosition = 0;
     private int mThemeColor = 0;
     private boolean mAutoFullscreen = false;
@@ -207,6 +208,7 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
                 mAutoPlay = a.getBoolean(R.styleable.EasyVideoPlayer_evp_autoPlay, false);
                 mControlsDisabled = a.getBoolean(R.styleable.EasyVideoPlayer_evp_disableControls, false);
                 mSeekAheadDisabled = a.getBoolean(R.styleable.EasyVideoPlayer_evp_disableSeekAhead, false);
+                mSeekDisabled = a.getBoolean(R.styleable.EasyVideoPlayer_evp_disableSeek, false);
 
                 mThemeColor = a.getColor(R.styleable.EasyVideoPlayer_evp_themeColor,
                     Util.resolveColor(context, R.attr.colorPrimary));
@@ -537,6 +539,14 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
 
     public void disableSeekAhead() {
         mSeekAheadDisabled = true;
+    }
+
+    public void enableSeek() {
+        mSeekDisabled = false;
+    }
+
+    public void disableSeek() {
+        mSeekDisabled = true;
     }
 
     private void setHighestPosition(int proposedPosition) {
@@ -917,6 +927,11 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
     @Override
     public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
         if (fromUser) {
+            if (mSeekDisabled) {
+                seekBar.setProgress(this.getCurrentPosition());
+                return;
+            }
+
             if (mSeekAheadDisabled && value > mHighestPosition) {
                 seekBar.setProgress(mHighestPosition);
                 return;
@@ -929,12 +944,12 @@ public class EasyVideoPlayer extends FrameLayout implements IUserMethods, Textur
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
         mWasPlaying = isPlaying();
-        if (mWasPlaying) mPlayer.pause(); // keeps the time updater running, unlike pause()
+        if (mWasPlaying && !mSeekDisabled) mPlayer.pause(); // keeps the time updater running, unlike pause()
     }
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-        if (mWasPlaying) mPlayer.start();
+        if (mWasPlaying && !mSeekDisabled) mPlayer.start();
     }
 
     @Override

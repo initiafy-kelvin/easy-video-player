@@ -7,6 +7,7 @@
     app:evp_autoFullscreen="false"
     app:evp_autoPlay="false"
     app:evp_disableSeekAhead="false"
+    app:evp_disableSeek="false"
     app:evp_customLabelText="Hello!"
     app:evp_disableControls="false"
     app:evp_hideControlsOnPlay="true"
